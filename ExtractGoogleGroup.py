@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-This script extracts entries from a google group to a XML file
+This script extracts entries from a google group to a data structure
 Require 'BeautifulSoup' module
 Released under the GPL. Report bugs to tattoo@bbsers.org
 
@@ -19,16 +19,7 @@ import xmlrpclib
 import urllib
 import urllib2
 from BeautifulSoup import BeautifulSoup,Tag,CData
-import re
 import logging
-from datetime import datetime
-from datetime import timedelta
-import time
-from optparse import OptionParser
-from string import Template
-import pickle
-import xml
-from xml.sax import saxutils
 
 
 class Extract:
@@ -64,11 +55,11 @@ class Extract:
         b = b.find('span')
         b = b.findAll('b')[2]
 
-        return b.string
+        return int(b.string)
     
     #取得当前google group的主题总数
     def _totalTopicNumber(self):
-        self.totalTopicNumber = int(self.getTotalTopicNumber())
+        self.totalTopicNumber = self.getTotalTopicNumber()
     
     def testGetTotalTopicNumber(self):
         self._totalTopicNumber()
@@ -146,6 +137,19 @@ class Extract:
         print self._addPrefixToUrl("Test add <a href=\"/group/bbser/about\"> here!")
     
     
+    #从GroupName_group_members.csv中根据email地址前后缀取得完整email地址和用户昵称
+    def _getMailAddrFromMemberListCSV(self, prefix, surfix):
+        from UTF8CSV import UnicodeReader
+        csvreader = UnicodeReader(open(self.groupname + "_group_members.csv", 'rb'))
+        print "prefix = " + prefix + "\nsurfix = " + surfix + "\n"
+        for row in csvreader:
+            if (prefix in row[0]) & (surfix in row[0]):
+                return row
+
+    def testGetMailAddrFromMemberListCSV(self):
+        print self._getMailAddrFromMemberListCSV("tkh8", "@163.com")
+
+
     #取得一个主题列表页内所有主题的内容
     def getTopicContentInTopicListPage(self, list):
         """
@@ -190,15 +194,44 @@ class Extract:
                         nameAndMail = fromtext[0].split('&quot;')
                         author = nameAndMail[1]
                         email = self._addPrefixToUrl((str(nameAndMail[2]).replace("&lt;", "")) + (str(fromtext[1])) + (str(fromtext[2]).replace("&gt;", ""))).lstrip()
+                        x = self._getMailAddrFromMemberListCSV(str(nameAndMail[2]).replace("&lt;", "").lstrip(), str(fromtext[2]).replace("&gt;", ""))
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+
+                    elif fromtext[0].find('&lt;') != -1:
+                        nameAndMail = fromtext[0].split('&lt;')
+                        author = nameAndMail[0]
+                        prefix = str(nameAndMail[1])
+                        surfix = str(fromtext[2]).replace("&gt;", "")
+                        email = self._addPrefixToUrl(prefix + (str(fromtext[1])) + surfix).lstrip()
+
+                        x = self._getMailAddrFromMemberListCSV(prefix, surfix)
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
                     else:
                         email = self._addPrefixToUrl(str(fromtext[0]) + (str(fromtext[1])) + str(fromtext[2])).lstrip()
                         author = email
+                        prefix = str(fromtext[0]).lstrip()
+                        if prefix != None:
+                            x = self._getMailAddrFromMemberListCSV(prefix, str(fromtext[2]))
+                            if x:
+                                email = x[0]
+                                if x[1]:
+                                    author = x[1]
+                                else:
+                                    author = email
     
                     link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
     
                     threads['from'] = author
                     threads['email'] = email
-                    threads['date'] = tmp[4].find('b').string
+                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
+                    threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    print threads['date']
                     content = self._addPrefixToUrl(str(body.contents))
                     threads['content'] = content
                     threads['individual_link'] = link
@@ -206,22 +239,59 @@ class Extract:
                     reply = {'id':'', 'from':'', 'email':'', 'date':'', 'subject':'','content':'', 'link':''}
     
                     tmp = head.findAll('div')
+
                     fromtext = tmp[2].find('b').contents
                     if fromtext[0].find('&quot;') != -1 :
                         nameAndMail = fromtext[0].split('&quot;')
                         author = nameAndMail[1]
                         email = self._addPrefixToUrl((str(nameAndMail[2]).replace("&lt;", "")) + (str(fromtext[1])) + (str(fromtext[2]).replace("&gt;", ""))).lstrip()
+                        x = self._getMailAddrFromMemberListCSV(str(nameAndMail[2]).replace("&lt;", "").lstrip(), str(fromtext[2]).replace("&gt;", ""))
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+
+                    elif fromtext[0].find('&lt;') != -1:
+                        nameAndMail = fromtext[0].split('&lt;')
+                        author = nameAndMail[0]
+                        prefix = str(nameAndMail[1])
+                        surfix = str(fromtext[2]).replace("&gt;", "")
+                        email = self._addPrefixToUrl(prefix + (str(fromtext[1])) + surfix).lstrip()
+
+                        x = self._getMailAddrFromMemberListCSV(prefix, surfix)
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+
                     else:
                         email = self._addPrefixToUrl(str(fromtext[0]) + (str(fromtext[1])) + str(fromtext[2])).lstrip()
                         author = email
-    
-                    subject = str(tmp[5].find('b').contents)
-                    link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
-                    
+                        x = self._getMailAddrFromMemberListCSV(str(fromtext[0]).lstrip(), str(fromtext[2]))
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+                            else:
+                                author = email
+
+                    #有时候帖子没有包含当地时间这一行
+                    if len(head.find(attrs={'class' : 'fontsize2'}).findAll('div')) == 3:
+                        print tmp[4]
+                        subject = str(tmp[4].find('b').contents)
+                        link = self._addPrefixToUrl(tmp[5].findAll('a')[3]['href'])
+                    else:
+                        print tmp[5]
+                        subject = str(tmp[5].find('b').contents)
+                        link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
+
+
                     reply['id'] = i
                     reply['from'] = author
                     reply['email'] = email
-                    reply['date'] = tmp[4].find('b').string
+                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
+                    reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    print reply['date']
                     reply['subject'] = subject
                     content = self._addPrefixToUrl(str(body.contents))
                     reply['content'] = content
@@ -238,18 +308,38 @@ class Extract:
     def testGetTopicContentInTopicListPage(self):
         self._totalTopicListPageNumber()
         print self.getTopicContentInTopicListPage(self.getTopicAndUrlInTopicListPage(self.totalTopicListPageNumber))
-    
-    
+
+
+    #日期格式转换到Unix timestamp
+    def dateToTimestamp(self, date):
+        import time
+        #return time.mktime(time.strptime(date, "%a, %b %d %Y %I:%M%p"))
+        return time.mktime(time.strptime(date, "%a, %d %b %Y %I:%M:%S"))
+
+    def testDateToTimestamp(self):
+        print self.dateToTimestamp("Fri, May 26 2006 4:54:30")
+
+"""
+from datetime import datetime
+import time
+
+print datetime.fromtimestamp(1289557692)
+print datetime.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p")
+print int(time.mktime(time.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p")))
+print datetime.fromtimestamp(int(time.mktime(time.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p"))))
+"""
 
 #---------------------------------方法测试---------------------------------
-test = Extract("bbser")
+if __name__ == '__main__':
+    test = Extract("bbser")
 
-#test.testGetTotalTopicNumber()
-#test.testGetTotalTopicListPageNumber()
-#test.testGoToTopicListPage()
-#test.testGetTopicAndUrlInTopicListPage()
-#test.testAddPrefixToUrl()
-test.testGetTopicContentInTopicListPage()
-
-
+    #test.testGetTotalTopicNumber()
+    #test.testGetTotalTopicListPageNumber()
+    #test.testGoToTopicListPage()
+    #test.testGetTopicAndUrlInTopicListPage()
+    #test.testAddPrefixToUrl()
+    #test.testGetMailAddrFromMemberListCSV()
+    #test.testGetTopicContentInTopicListPage()
+    test.testDateToTimestamp()
+    
 
