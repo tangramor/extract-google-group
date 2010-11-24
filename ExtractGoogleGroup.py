@@ -317,7 +317,7 @@ class Extract:
     def dateToTimestamp(self, date):
         import time
         #return time.mktime(time.strptime(date, "%a, %b %d %Y %I:%M%p"))
-        return time.mktime(time.strptime(date, "%a, %d %b %Y %I:%M:%S"))
+        return time.mktime(time.strptime(date, "%a, %d %b %Y %H:%M:%S"))
 
     def testDateToTimestamp(self):
         print self.dateToTimestamp("Fri, May 26 2006 4:54:30")

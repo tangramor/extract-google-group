@@ -49,7 +49,7 @@ f_posts = open('discuzx_posts.sql', 'a')
 j = 1   #j is counter for threads
 k = 1   #k is counter for posts
 
-for i in range(2): #extract.testGetTotalTopicListPageNumber():
+for i in range(1): #extract.testGetTotalTopicListPageNumber():
     threads = u''
     posts = u''
 
@@ -63,7 +63,7 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
                 postId += 1
                 lastpost = extract.dateToTimestamp(reply['date'])
                 poster = u"<b>" + reply['from'] + u"&lt;" + reply['email'] + u"&gt;</b>\n"
-                print reply['content']
+                print reply['content'].encode('utf8')
                 posts += postT.substitute(postId = postId,
                     forumId = forumId,
                     threadId = threadId,
@@ -100,10 +100,10 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
             replies = len(topics['replies'])
             )
 
-        f_threads.write(threads)
-        f_posts.write(posts)
-
         j += 1
+
+    f_threads.write(threads.encode('utf8'))
+    f_posts.write(posts.encode('utf8'))
 
 
 
