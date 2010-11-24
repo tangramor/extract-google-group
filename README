@@ -1,5 +1,6 @@
 Extract Google Group | 谷歌邮件组抽取器
 =======================================
+
 This python tool aims to extract the posts in a google group and give user capability to use the data to import into other forum systems. It should be useful when migrating google group to aother forum.
 
 这个Python工具的目标是从谷歌邮件组中抽取帖子相关数据，这样使用者就可以将这些数据导入其它论坛系统。
@@ -7,11 +8,12 @@ This python tool aims to extract the posts in a google group and give user capab
 
 Copyright | 版权
 --------------------------
+
 This application is opensource software released under the GNU General Public License (GPL) version 3.
 
 此工具基于GNU通用公共许可证(GPL)版本3发布。
 
 You can find the GPLv3 here: http://www.gnu.org/licenses/gpl-3.0.html
 
-GPL版本3的中文文本可以在此找到：http://yp.oss.org.cn/software/show_resource.php?resource_id=688
+GPL版本3的中文文本可以在此找到： http://yp.oss.org.cn/software/show_resource.php?resource_id=688
 
