@@ -232,7 +232,9 @@ class Extract:
                     date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
                     threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
                     print threads['date']
-                    content = self._addPrefixToUrl(str(body.contents))
+
+                    content = u''.join(map(CData, body.contents))
+                    content = self._addPrefixToUrl(content)
                     threads['content'] = content
                     threads['individual_link'] = link
                 else:
@@ -293,7 +295,8 @@ class Extract:
                     reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
                     print reply['date']
                     reply['subject'] = subject
-                    content = self._addPrefixToUrl(str(body.contents))
+                    content = u''.join(map(CData, body.contents))
+                    content = self._addPrefixToUrl(content)
                     reply['content'] = content
     
                     threads['replies'].append(reply)

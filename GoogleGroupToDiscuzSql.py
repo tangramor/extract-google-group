@@ -46,14 +46,13 @@ f_posts.close()
 f_threads = open('discuzx_threads.sql', 'a')
 f_posts = open('discuzx_posts.sql', 'a')
 
-threads = None
-posts = None
-
 j = 1   #j is counter for threads
 k = 1   #k is counter for posts
 
 for i in range(2): #extract.testGetTotalTopicListPageNumber():
-    
+    threads = u''
+    posts = u''
+
     list = extract.getTopicAndUrlInTopicListPage(i)  
     for topics in extract.getTopicContentInTopicListPage(list):
         threadId = j + 5
@@ -63,7 +62,8 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
             for reply in topics['replies']:
                 postId += 1
                 lastpost = extract.dateToTimestamp(reply['date'])
-                poster = "<b>" + reply['from'] + "&lt;" + reply['email'] + "&gt;</b>\n"
+                poster = u"<b>" + reply['from'] + u"&lt;" + reply['email'] + u"&gt;</b>\n"
+                print reply['content']
                 posts += postT.substitute(postId = postId,
                     forumId = forumId,
                     threadId = threadId,
@@ -73,11 +73,11 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
                     subject = reply['subject'],
                     dateline = lastpost,
                     message = poster + reply['content'],
-                    useip = '127.0.0.1'
+                    useip = u'127.0.0.1'
                     )
                 k += 1
 
-        poster = "<b>" + topics['from'] + "&lt;" + topics['email'] + "&gt;</b>\n"
+        poster = u"<b>" + topics['from'] + u"&lt;" + topics['email'] + u"&gt;</b>\n"
         posts += postT.substitute(postId = postId,
             forumId = forumId,
             threadId = threadId,
@@ -87,7 +87,7 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
             subject = topics['subject'],
             dateline = extract.dateToTimestamp(topics['date']),
             message = poster + topics['content'],
-            useip = '127.0.0.1'
+            useip = u'127.0.0.1'
             )
         threads += threadT.substitute(threadId = threadId,
             forumId = forumId,
@@ -99,6 +99,9 @@ for i in range(2): #extract.testGetTotalTopicListPageNumber():
             lastposter = author,
             replies = len(topics['replies'])
             )
+
+        f_threads.write(threads)
+        f_posts.write(posts)
 
         j += 1
 
