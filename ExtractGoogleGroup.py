@@ -49,14 +49,42 @@ class Extract:
 
 
     #取得主题总数
-    def getTotalTopicNumber(self):
+    def _extractTotalTopicNumberFromPage(self):
         url = self.baseUrl + "topics?tsc=1"
         soup = self._fetchPage(url)
         b = soup.find('div', {'class' : 'maincontbox'})
         b = b.find('span')
         b = b.findAll('b')[2]
 
-        logging.info("The total topics number of this group is: %s", b)
+        return b.string
+
+    def getTotalTopicNumber(self):
+        cacheFile = None
+        cacheName = "_totalTopicNumber.cache"
+        if os.path.exists(cacheName):
+            logging.info('Found cache file')
+            cacheFile = open(cacheName,'r')
+            strNumber = cacheFile.readline()
+            cacheFile.close()
+            if strNumber:
+                logging.info("The total topics number of this group is: %s", strNumber)
+                return int(strNumber)
+            else:
+                cacheFile = open(cacheName,'w')
+                strNumber = self._extractTotalTopicNumberFromPage()
+                cacheFile.write(strNumber)
+                cacheFile.close()
+                logging.info("The total topics number of this group is: %s", strNumber)
+                return int(strNumber)
+        else:
+            cacheFile = open(cacheName,'w')
+            strNumber = self._extractTotalTopicNumberFromPage()
+            cacheFile.write(strNumber)
+            cacheFile.close()
+            logging.info("The total topics number of this group is: %s", strNumber)
+            return int(strNumber)
+
+        
 
         return int(b.string)
     
@@ -244,11 +272,23 @@ function tog_quote( idnum ) {
                 if i == 0:
                     tmp = head.findAll('div')
                     fromtext = tmp[2].find('b').contents
-                    if fromtext[0].find('&quot;') != -1:
+                    if (fromtext[0].find('&quot;') != -1) & (len(fromtext) == 3):
                         nameAndMail = fromtext[0].split('&quot;')
                         author = nameAndMail[1]
                         email = self._addPrefixToUrl((str(nameAndMail[2]).replace("&lt;", "")) + (str(fromtext[1])) + (str(fromtext[2]).replace("&gt;", ""))).lstrip()
                         x = self._getMailAddrFromMemberListCSV(str(nameAndMail[2]).replace("&lt;", "").lstrip(), str(fromtext[2]).replace("&gt;", ""))
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+
+                    elif (fromtext[0].find('&quot;') != -1) & (len(fromtext) == 5):
+                        nameAndMail = fromtext[0].split('&quot;')
+                        domainAndName = fromtext[2].split('&lt;')
+                        author = nameAndMail[1] + str(fromtext[1]) + str(domainAndName[0]).replace("&quot;", "")
+                        logging.debug("author: %s", author)
+                        email = self._addPrefixToUrl((str(domainAndName[1])) + (str(fromtext[3])) + (str(fromtext[4]).replace("&gt;", ""))).lstrip()
+                        x = self._getMailAddrFromMemberListCSV(str(domainAndName[1]).lstrip(), str(fromtext[4]).replace("&gt;", ""))
                         if x:
                             email = x[0]
                             if x[1]:
@@ -305,11 +345,24 @@ function tog_quote( idnum ) {
                     tmp = head.findAll('div')
 
                     fromtext = tmp[2].find('b').contents
-                    if fromtext[0].find('&quot;') != -1 :
+                    if (fromtext[0].find('&quot;') != -1) & (len(fromtext) == 3):
                         nameAndMail = fromtext[0].split('&quot;')
                         author = nameAndMail[1]
+                        logging.debug("nameAndEmail variable: %s", nameAndMail)
                         email = self._addPrefixToUrl((str(nameAndMail[2]).replace("&lt;", "")) + (str(fromtext[1])) + (str(fromtext[2]).replace("&gt;", ""))).lstrip()
                         x = self._getMailAddrFromMemberListCSV(str(nameAndMail[2]).replace("&lt;", "").lstrip(), str(fromtext[2]).replace("&gt;", ""))
+                        if x:
+                            email = x[0]
+                            if x[1]:
+                                author = x[1]
+
+                    elif (fromtext[0].find('&quot;') != -1) & (len(fromtext) == 5):
+                        nameAndMail = fromtext[0].split('&quot;')
+                        domainAndName = fromtext[2].split('&lt;')
+                        author = nameAndMail[1] + str(fromtext[1]) + str(domainAndName[0]).replace("&quot;", "")
+                        logging.debug("author: %s", author)
+                        email = self._addPrefixToUrl((str(domainAndName[1])) + (str(fromtext[3])) + (str(fromtext[4]).replace("&gt;", ""))).lstrip()
+                        x = self._getMailAddrFromMemberListCSV(str(domainAndName[1]).lstrip(), str(fromtext[4]).replace("&gt;", ""))
                         if x:
                             email = x[0]
                             if x[1]:
