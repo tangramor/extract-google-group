@@ -5,6 +5,10 @@ This python tool aims to extract the posts in a google group and give user capab
 
 这个Python工具的目标是从谷歌邮件组中抽取帖子相关数据，这样使用者就可以将这些数据导入其它论坛系统。
 
+This tool needs Beautiful Soup to parse HTML document, you can download it here: http://www.crummy.com/software/BeautifulSoup/
+
+此工具使用了Beautiful Soup来解析HTML文件，你可以从作者网站下载： http://www.crummy.com/software/BeautifulSoup/
+
 
 Copyright | 版权
 --------------------------

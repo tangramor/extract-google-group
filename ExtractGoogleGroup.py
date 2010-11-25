@@ -119,7 +119,7 @@ class Extract:
                 entry = {'subject':'', 'link':''}
                 tmp = tpTbl.findAll('a')[1]
                 entry['link'] = self.rootUrl + tmp['href']
-                entry['subject'] = tmp.find('font').string
+                entry['subject'] = u''.join(map(CData, tmp.find('font').contents))
                 list.append(entry)
         return list
     
@@ -280,11 +280,11 @@ class Extract:
                     #有时候帖子没有包含当地时间这一行
                     if len(head.find(attrs={'class' : 'fontsize2'}).findAll('div')) == 3:
                         print tmp[4]
-                        subject = str(tmp[4].find('b').contents)
+                        subject = u''.join(map(CData, tmp[4].find('b').contents))
                         link = self._addPrefixToUrl(tmp[5].findAll('a')[3]['href'])
                     else:
                         print tmp[5]
-                        subject = str(tmp[5].find('b').contents)
+                        subject = u''.join(map(CData, tmp[5].find('b').contents))
                         link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
 
 
