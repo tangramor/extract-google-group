@@ -15,15 +15,26 @@ __VERSION__="0.1"
 import string
 import sys
 import os
+import logging
 
 from ExtractGoogleGroup import Extract
 from string import Template
 
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='extract-google-group.log',
+                    filemode='w');
+
+# call extract-google-group
 extract = Extract(sys.argv[1])
 
 forumId = 36        #the forum id to import these data into
 author = 'admin'    #the user that used to import data
 authorId = 1        #the user id of the user
+
+j = 1   #j is counter for threads
+k = 1   #k is counter for posts
 
 f_threads = open('discuzx_threads.sql', 'w')
 f_posts = open('discuzx_posts.sql', 'w')
@@ -54,10 +65,8 @@ f_threads = open('discuzx_threads.sql', 'a')
 f_posts = open('discuzx_posts.sql', 'a')
 f_post_tableid = open('discuzx_post_tableid.sql', 'a')
 
-j = 2   #j is counter for threads
-k = 2   #k is counter for posts
 
-for i in range(1): #extract.testGetTotalTopicListPageNumber():
+for i in range(extract.getTotalTopicListPageNumber(extract.getTotalTopicNumber())):
     threads = u''
     posts = u''
     post_tableids = u''
@@ -65,7 +74,7 @@ for i in range(1): #extract.testGetTotalTopicListPageNumber():
     list = extract.getTopicAndUrlInTopicListPage(i)  
     for topics in extract.getTopicContentInTopicListPage(list):
 
-        poster = u"<b>原帖作者：" + topics['from'] + u"&lt;" + topics['email'] + u"&gt;</b><br>\n<b>发表时间：" + topics['date'] + u"</b><br>\n"
+        poster = u"原帖作者：<b>" + topics['from'] + u" &lt;" + topics['email'] + u"&gt;</b><br>\n发表时间：<b>" + topics['date'] + u"</b><br />\n原帖链接：<a href=\"" + extract.rootUrl + topics['individual_link'] + "\" target=_blank>" + extract.rootUrl + topics['individual_link'] + "</a><br /><br />\n"
         posts += postT.substitute(postId = k,
             forumId = forumId,
             threadId = j,
@@ -84,7 +93,7 @@ for i in range(1): #extract.testGetTotalTopicListPageNumber():
         if topics['replies']:
             for reply in topics['replies']:
                 lastpost = extract.dateToTimestamp(reply['date'])
-                poster = u"<b>原帖作者：" + reply['from'] + u"&lt;" + reply['email'] + u"&gt;</b><br>\n<b>发表时间：" + reply['date'] + u"</b><br>\n"
+                poster = u"原帖作者：<b>" + reply['from'] + u" &lt;" + reply['email'] + u"&gt;</b><br>\n发表时间：<b>" + reply['date'] + u"</b><br />\n原帖链接：<a href=\"" + extract.rootUrl + reply['link'] + "\" target=_blank>" + extract.rootUrl + reply['link'] + "</a><br /><br />\n"
                 #print reply['content'].encode('utf8')
                 posts += postT.substitute(postId = k,
                     forumId = forumId,

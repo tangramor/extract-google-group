@@ -12,6 +12,7 @@ General Public License: http://www.gnu.org/copyleft/gpl.html
 __VERSION__="0.1"
 
 import string
+import re
 import sys
 import os
 import codecs
@@ -36,11 +37,11 @@ class Extract:
 
     #取得页面源码并返回soup对象
     def _fetchPage(self, url):
-        logging.info("begin fetch page %s",url)
+        logging.info("Begin to fetch page %s", url)
         req = urllib2.Request(url)
         req.add_header('User-agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.5) Gecko/20070713 Firefox/2.0.0.5')
         page = urllib2.build_opener().open(req).read()
-        logging.info("fetch page successfully")
+        logging.info("Fetch page successfully")
         return BeautifulSoup(page)
     
     def testFetchPage(self):
@@ -55,12 +56,14 @@ class Extract:
         b = b.find('span')
         b = b.findAll('b')[2]
 
+        logging.info("The total topics number of this group is: %s", b)
+
         return int(b.string)
     
     #取得当前google group的主题总数
     def _totalTopicNumber(self):
         self.totalTopicNumber = self.getTotalTopicNumber()
-    
+
     def testGetTotalTopicNumber(self):
         self._totalTopicNumber()
         print self.totalTopicNumber
@@ -70,9 +73,13 @@ class Extract:
     def getTotalTopicListPageNumber(self, topicNumber):
         iNumber = int(topicNumber)
         if (iNumber % self.topicNumPerPage) > 0:
-            return iNumber / self.topicNumPerPage + 1
+            x = iNumber / self.topicNumPerPage + 1
+            logging.info("The total number of topic list page is: %d", x)
+            return x
         else:
-            return iNumber / self.topicNumPerPage
+            x = iNumber / self.topicNumPerPage
+            logging.info("The total number of topic list page is: %d", x)
+            return x
     
     #取得当前google group的主题列表页数
     def _totalTopicListPageNumber(self):
@@ -93,12 +100,15 @@ class Extract:
     def goToTopicListPage(self, page):
         self._setup()
         if page < self.totalTopicListPageNumber:
-            url = self.baseUrl + "topics?start=" + str(page * self.topicNumPerPage) + "&sa=N"
+            url = self.baseUrl + "topics?gvc=2&start=" + str(page * self.topicNumPerPage)
+            logging.info("Going to URL: %s", url)
             return self._fetchPage(url)
         elif page == self.totalTopicListPageNumber:
             url = self.baseUrl + "topics?start=" + str(self.totalTopicNumber) + "&sa=N"
+            logging.info("Going to URL: %s", url)
             return self._fetchPage(url)
         else:
+            logging.info("No page to go...")
             return ""
     
     def testGoToTopicListPage(self):
@@ -110,17 +120,26 @@ class Extract:
     def getTopicAndUrlInTopicListPage(self, page):
         list = []
         
+        logging.info("The page number to go is: %d", page)
+
         b = self.goToTopicListPage(page)
         b = b.find('div', {'class' : 'maincontoutboxatt'})
-        b = b.findAll('table')
+        b = b.findAll('table')[0]
+        b = b.findAll('tr')
     
         if b:
-            for tpTbl in b:
-                entry = {'subject':'', 'link':''}
-                tmp = tpTbl.findAll('a')[1]
-                entry['link'] = self.rootUrl + tmp['href']
-                entry['subject'] = u''.join(map(CData, tmp.find('font').contents))
-                list.append(entry)
+            i = 0
+            for tr in b:
+                if i > 1: #前两个tr内容为表头信息，抛弃
+                    tds = tr.findAll('td')
+                    entry = {'subject' : '', 'link' : ''}
+                    tmp = tds[1].find('a')
+                    entry['link'] = self.rootUrl + tmp['href']
+                    entry['subject'] = u''.join(map(CData, tmp.contents))
+                    logging.info("Get topic: %s", entry['subject'])
+                    list.append(entry)
+                i += 1
+
         return list
     
     def testGetTopicAndUrlInTopicListPage(self):
@@ -141,7 +160,7 @@ class Extract:
     def _getMailAddrFromMemberListCSV(self, prefix, surfix):
         from UTF8CSV import UnicodeReader
         csvreader = UnicodeReader(open(self.groupname + "_group_members.csv", 'rb'))
-        print "prefix = " + prefix + "\nsurfix = " + surfix + "\n"
+        logging.debug("The prefix: %s; the surfix: %s", prefix, surfix)
         for row in csvreader:
             if (prefix in row[0]) & (surfix in row[0]):
                 return row
@@ -181,6 +200,41 @@ class Extract:
             topicPage = self._fetchPage(entry['link'])
             heads = topicPage.findAll('div', {'id' : 'oh'})
             bodies = topicPage.findAll('div', {'id' : 'inbdy'})
+
+            #google group帖子里常常会有引用链接，需要使用javascript展开和收拢
+            togScript = u'''
+<script language="javascript1.3"><!--
+function tog() {
+  // tog: toggle the visibility of html elements (arguments[1..]) from none to
+  // arguments[0].  Return what should be returned in a javascript onevent().
+  display = arguments[0];
+  for( var i=1; i<arguments.length; i++ ) {    
+    var x = document.getElementById(arguments[i]);
+    if (!x) continue;
+    if (x.style.display == "none" || x.style.display == "") {
+      x.style.display = display;
+    } else {
+      x.style.display = "none";
+    }
+  }
+
+  var e = is_ie ? window.event : this;
+  if (e) {
+    if (is_ie) {
+      e.cancelBubble = true;
+      e.returnValue = false;
+      return false;
+    } else {
+      return false;
+    }
+  }
+}
+function tog_quote( idnum ) {
+  return tog( "block", "qheader_shown_" + idnum, "qheader_hidden_" + idnum,
+	   "qhide_" + idnum );
+}
+//--></script>
+            '''
     
             for i in range(len(heads)):
                 head = heads[i]
@@ -225,19 +279,27 @@ class Extract:
                                 else:
                                     author = email
     
-                    link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
+                    #有时候帖子没有包含当地时间这一行，导致标题行上升了一位
+                    if len(head.find(attrs={'class' : 'fontsize2'}).findAll('div')) == 3:
+                        logging.debug("The link div: \n%s", tmp[5])
+                        link = self._addPrefixToUrl(tmp[5].findAll('a')[2]['href'])
+                    else:
+                        logging.debug("The link div: \n%s", tmp[6])
+                        link = self._addPrefixToUrl(tmp[6].findAll('a')[2]['href'])
     
                     threads['from'] = author
                     threads['email'] = email
                     date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
                     threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
-                    print threads['date']
+                    #print threads['date']
 
                     content = u''.join(map(CData, body.contents))
-                    content = self._addPrefixToUrl(content)
+                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    content = togScript + self._addPrefixToUrl(content)
                     threads['content'] = content
                     threads['individual_link'] = link
                 else:
+                    #对1楼的回复帖子们
                     reply = {'id':'', 'from':'', 'email':'', 'date':'', 'subject':'','content':'', 'link':''}
     
                     tmp = head.findAll('div')
@@ -277,26 +339,27 @@ class Extract:
                             else:
                                 author = email
 
-                    #有时候帖子没有包含当地时间这一行
+                    #有时候帖子没有包含当地时间这一行，导致标题行上升了一位
                     if len(head.find(attrs={'class' : 'fontsize2'}).findAll('div')) == 3:
-                        print tmp[4]
+                        #print tmp[4]
                         subject = u''.join(map(CData, tmp[4].find('b').contents))
-                        link = self._addPrefixToUrl(tmp[5].findAll('a')[3]['href'])
+                        link = self._addPrefixToUrl(tmp[5].findAll('a')[2]['href'])
                     else:
-                        print tmp[5]
+                        #print tmp[5]
                         subject = u''.join(map(CData, tmp[5].find('b').contents))
-                        link = self._addPrefixToUrl(tmp[6].findAll('a')[3]['href'])
+                        link = self._addPrefixToUrl(tmp[6].findAll('a')[2]['href'])
 
-
+                    reply['link'] = link
                     reply['id'] = i
                     reply['from'] = author
                     reply['email'] = email
                     date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
                     reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
-                    print reply['date']
+                    #print reply['date']
                     reply['subject'] = subject
                     content = u''.join(map(CData, body.contents))
-                    content = self._addPrefixToUrl(content)
+                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    content = togScript + self._addPrefixToUrl(content)
                     reply['content'] = content
     
                     threads['replies'].append(reply)
