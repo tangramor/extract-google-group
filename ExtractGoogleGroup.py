@@ -335,6 +335,7 @@ function tog_quote( idnum ) {
 
                     content = u''.join(map(CData, body.contents))
                     content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    #content = content.replace("'", "\\\'")
                     content = togScript + self._addPrefixToUrl(content)
                     threads['content'] = content
                     threads['individual_link'] = link
@@ -412,6 +413,7 @@ function tog_quote( idnum ) {
                     reply['subject'] = subject
                     content = u''.join(map(CData, body.contents))
                     content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    #content = content.replace("'", "\\\'")
                     content = togScript + self._addPrefixToUrl(content)
                     reply['content'] = content
     

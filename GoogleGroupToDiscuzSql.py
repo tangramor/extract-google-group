@@ -28,8 +28,29 @@ def Transform(startpage, endpage):
 
     j = 1   #j is counter for threads
     k = 1   #k is counter for posts
+
+    counterCache = None
+    counterFileName = "_threadAndPostID.cache"
+    if os.path.exists(counterFileName):
+        logging.info('Found ID cache file')
+        counterCache = open(counterFileName, 'r')
+        x = counterCache.readlines()
+        counterCache.close()
+        if len(x) == 2:
+            j = int(x[0]) + 1
+            k = int(x[1]) + 1
+            logging.info("Current thread ID: %s", str(j))
+            logging.info("Current post ID: %s", str(k))
+        else:
+            counterCache = open(counterFileName, 'w')
+            counterCache.write("1\n1")
+            counterCache.close()
+    else:
+        counterCache = open(counterFileName, 'w')
+        counterCache.write("1\n1")
+        counterCache.close()
     
-    filesurfix = '_' + str(startpage) + '_' + str(endpage)
+    filesurfix = '_' + str(startpage) + '_' + str(endpage - 1)
     threadsFileName = 'discuzx_threads' + filesurfix + '.sql'
     postsFileName = 'discuzx_posts' + filesurfix + '.sql'
     postTableidFileName = 'discuzx_post_tableid' + filesurfix + '.sql'
@@ -63,6 +84,8 @@ def Transform(startpage, endpage):
     f_post_tableid = open(postTableidFileName, 'a')
     
     r_list = range(startpage, endpage)
+    
+    counterCache = open(counterFileName, 'w')
 
     for i in r_list:
         threads = u''
@@ -81,7 +104,7 @@ def Transform(startpage, endpage):
                 authorId = authorId,
                 subject = topics['subject'],
                 dateline = extract.dateToTimestamp(topics['date']),
-                message = poster + topics['content'].replace("'", "\'"),
+                message = poster + topics['content'].replace("'", "\\\'"),
                 useip = u'127.0.0.1'
                 )
             post_tableids += postTableidT.substitute(postId = k)
@@ -101,7 +124,7 @@ def Transform(startpage, endpage):
                         authorId = authorId,
                         subject = reply['subject'],
                         dateline = lastpost,
-                        message = poster + reply['content'].replace("'", "\'"),
+                        message = poster + reply['content'].replace("'", "\\\'"),
                         useip = u'127.0.0.1'
                         )
                     post_tableids += postTableidT.substitute(postId = k)
@@ -123,6 +146,9 @@ def Transform(startpage, endpage):
         f_posts.write(posts.encode('utf8'))
         f_post_tableid.write(post_tableids)
 
+        counterCache.write(str(j) + "\n" + str(k))
+
+    counterCache.close()
 
     f_threads.close()
     f_posts.close()
@@ -134,7 +160,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='extract-google-group.log',
-                    filemode='w');
+                    filemode='a');
                     
 usage = "Usage: GoogleGroupToDiscuzSql groupname [-s startpage -e endpage]"
 
@@ -146,13 +172,19 @@ elif len(sys.argv) == 2:
     extract = Extract(sys.argv[1])
     startpage = 0
     endpage = extract.getTotalTopicListPageNumber(extract.getTotalTopicNumber())
-    Transform(startpage, endpage)    
+    Transform(startpage, endpage)
+    success = "You have successfully extracted you google group " + sys.argv[1] + " from topic list page 1 to " + str(endpage)
+    logging.info(success)
+    print success
 
 elif len(sys.argv) == 6:
     extract = Extract(sys.argv[1])
     startpage = int(sys.argv[3])
     endpage = int(sys.argv[5])
     Transform(startpage, endpage)
+    success = "You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage)
+    logging.info(success)
+    print success
     
 else:
     print usage
