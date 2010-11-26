@@ -61,7 +61,7 @@ def Transform(startpage, endpage, threadId, postId):
         counterCache.write("1\n1")
         counterCache.close()
     
-    filesurfix = '_' + str(startpage) + '_' + str(endpage - 1)
+    filesurfix = '_' + str(startpage) + '_' + str(endpage)
     threadsFileName = 'discuzx_threads' + filesurfix + '.sql'
     postsFileName = 'discuzx_posts' + filesurfix + '.sql'
     postTableidFileName = 'discuzx_post_tableid' + filesurfix + '.sql'
@@ -94,7 +94,7 @@ def Transform(startpage, endpage, threadId, postId):
     f_posts = open(postsFileName, 'a')
     f_post_tableid = open(postTableidFileName, 'a')
     
-    r_list = range(startpage, endpage)
+    r_list = range(startpage, endpage + 1)
     
     counterCache = open(counterFileName, 'w')
 
@@ -172,8 +172,8 @@ def Transform(startpage, endpage, threadId, postId):
 def setLogFormat(startpage, endpage):
     logging.basicConfig(level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%m-%d %H:%M',
-            filename='extract-google-group_' + str(startpage) + '_' + str(endpage - 1) + '.log',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filename='extract-google-group_' + str(startpage) + '_' + str(endpage) + '.log',
             filemode='w'
         )
 
@@ -191,7 +191,7 @@ def main():
     
     global extract
 
-    if sys.argv[1] == '--help' or sys.argv[1] == '-h':
+    if (len(sys.argv) == 1) or sys.argv[1] == '--help' or sys.argv[1] == '-h':
         print usage
 
     #extract all topics in a batch
@@ -202,25 +202,32 @@ def main():
         threadId = int(options.threadId)
         postId = int(options.postId)
 
-        stepSize = 5      
+        stepSize = 2      
         startpage = 0
-        endpage = sartpage + stepSize
+        endpage = startpage + stepSize
         totalpage = extract.getTotalTopicListPageNumber(extract.getTotalTopicNumber())
         if totalpage > stepSize:
             startmsg = "Start to extract posts from google group.\nThe threadId to start is " + options.threadId + ", and the postId to start is " + options.postId
-            logging.info(startmsg)
             print startmsg
 
             steps = totalpage / stepSize
             for i in range(steps):
-                setLogFormat(startpage, endpage)
-                ongoingmsg = "Now we are extracting page " + str(startpage) " to " + str(endpage - 1)
+                logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    filename='extract-google-group_' + str(startpage) + '_' + str(endpage) + '.log',
+                    filemode='w'
+                )
+
+                logging.info(startmsg)
+
+                ongoingmsg = "Now we are extracting page " + str(startpage) + " to " + str(endpage)
                 logging.info(ongoingmsg)
                 print ongoingmsg
 
                 Transform(startpage, endpage, threadId, postId)
 
-                success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage - 1)
+                success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage)
                 logging.info(success)
                 print success
                 
@@ -230,25 +237,29 @@ def main():
         else:
             endpage = totalpage
 
-            setLogFormat(startpage, endpage)
+            logging.basicConfig(level=logging.INFO,
+                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S',
+                filename='extract-google-group_' + str(startpage) + '_' + str(endpage) + '.log',
+                filemode='w'
+            )
             startmsg = "Start to extract posts from google group.\nThe threadId to start is " + options.threadId + ", and the postId to start is " + options.postId
             logging.info(startmsg)
             print startmsg
 
-            ongoingmsg = "Now we are extracting page " + str(startpage) " to " + str(endpage - 1)
+            ongoingmsg = "Now we are extracting page " + str(startpage) + " to " + str(endpage)
             logging.info(ongoingmsg)
             print ongoingmsg
 
             Transform(startpage, endpage, threadId, postId)
 
-            success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage - 1)
+            success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage)
             logging.info(success)
             print success
 
     #extract prefered topic pages with specified start and end page numbers
     elif (options.threadId != None) & (options.postId != None) & (len(sys.argv) == 10):
         startmsg = "Start to extract posts from google group.\nThe threadId to start is " + options.threadId + ", and the postId to start is " + options.postId
-        logging.info(startmsg)
         print startmsg
 
         extract = Extract(sys.argv[1])
@@ -259,14 +270,21 @@ def main():
         startpage = int(options.startpage)
         endpage = int(options.endpage)
 
-        setLogFormat(startpage, endpage)
-        ongoingmsg = "Now we are extracting page " + str(startpage) " to " + str(endpage - 1)
+        logging.basicConfig(level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filename='extract-google-group_' + str(startpage) + '_' + str(endpage) + '.log',
+            filemode='w'
+        )
+        logging.info(startmsg)
+
+        ongoingmsg = "Now we are extracting page " + str(startpage) + " to " + str(endpage)
         logging.info(ongoingmsg)
         print ongoingmsg
 
         Transform(startpage, endpage, threadId, postId)
 
-        success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage - 1)
+        success = "¼ -> ½ -> ¾ -> 1!!!!!! You have successfully extracted you google group " + sys.argv[1] + " from topic list page " + str(startpage) + " to " + str(endpage)
         logging.info(success)
         print success
     

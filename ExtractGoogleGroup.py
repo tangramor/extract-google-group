@@ -329,8 +329,10 @@ function tog_quote( idnum ) {
     
                     threads['from'] = author
                     threads['email'] = email
-                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
-                    threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    #date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
+                    #threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").split(':')
+                    threads['date'] = date[0] + ":" + date[1] + ":" + date[2].split(' ')[0]
                     #print threads['date']
 
                     content = u''.join(map(CData, body.contents))
@@ -395,11 +397,11 @@ function tog_quote( idnum ) {
 
                     #有时候帖子没有包含当地时间这一行，导致标题行上升了一位
                     if len(head.find(attrs={'class' : 'fontsize2'}).findAll('div')) == 3:
-                        #print tmp[4]
+                        logging.debug(tmp[4])
                         subject = u''.join(map(CData, tmp[4].find('b').contents))
                         link = self._addPrefixToUrl(tmp[5].findAll('a')[2]['href'])
                     else:
-                        #print tmp[5]
+                        logging.debug(tmp[5])
                         subject = u''.join(map(CData, tmp[5].find('b').contents))
                         link = self._addPrefixToUrl(tmp[6].findAll('a')[2]['href'])
 
@@ -407,8 +409,10 @@ function tog_quote( idnum ) {
                     reply['id'] = i
                     reply['from'] = author
                     reply['email'] = email
-                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
-                    reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    #date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
+                    #reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").split(':')
+                    reply['date'] = date[0] + ":" + date[1] + ":" + date[2].split(' ')[0]
                     #print reply['date']
                     reply['subject'] = subject
                     content = u''.join(map(CData, body.contents))
@@ -445,8 +449,11 @@ function tog_quote( idnum ) {
     def chineseDate(self, date):
         import time
         week = [u'一', u'二', u'三', u'四', u'五', u'六', u'日']
+        logging.debug("Date to convert: %s", date)
         x = time.strptime(date, "%a, %d %b %Y %H:%M:%S")
-        return time.strftime("%Y年%m月%d日 %H:%M:%S 星期", x).decode('utf8') + week[x[6]]
+        converted = time.strftime("%Y年%m月%d日 %H:%M:%S 星期", x).decode('utf8') + week[x[6]]
+        logging.debug("Date converted: %s", converted)
+        return converted
 
     def testChineseDate(self):
         print self.chineseDate("Fri, 26 May 2006 4:54:30") + u' hello'
