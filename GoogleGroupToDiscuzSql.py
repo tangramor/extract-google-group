@@ -27,8 +27,8 @@ def Transform(startpage, endpage):
     author = 'GoogleGroup'    #the user that used to import data
     authorId = 51        #the user id of the user
 
-    j = 33   #j is counter for threads, should set to the latest thread number + 1
-    k = 264   #k is counter for posts
+    j = 33   #j is counter for threads, should be set to the latest thread ID number + 1
+    k = 264   #k is counter for posts, should be set to the latest post ID number + 1
 
     global extract
 

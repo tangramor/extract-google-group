@@ -441,6 +441,7 @@ function tog_quote( idnum ) {
         print self.dateToTimestamp("Fri, 26 May 2006 4:54:30")
 
     
+    #日期转换为中国常用格式
     def chineseDate(self, date):
         import time
         week = [u'一', u'二', u'三', u'四', u'五', u'六', u'日']
