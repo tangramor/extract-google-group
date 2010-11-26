@@ -334,7 +334,7 @@ function tog_quote( idnum ) {
                     #print threads['date']
 
                     content = u''.join(map(CData, body.contents))
-                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt" style="cursor:hand"', content)
                     #content = content.replace("'", "\\\'")
                     content = togScript + self._addPrefixToUrl(content)
                     threads['content'] = content
@@ -412,7 +412,7 @@ function tog_quote( idnum ) {
                     #print reply['date']
                     reply['subject'] = subject
                     content = u''.join(map(CData, body.contents))
-                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt"', content)
+                    content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt" style="cursor:hand"', content)
                     #content = content.replace("'", "\\\'")
                     content = togScript + self._addPrefixToUrl(content)
                     reply['content'] = content
@@ -438,7 +438,17 @@ function tog_quote( idnum ) {
         return time.mktime(time.strptime(date, "%a, %d %b %Y %H:%M:%S"))
 
     def testDateToTimestamp(self):
-        print self.dateToTimestamp("Fri, May 26 2006 4:54:30")
+        print self.dateToTimestamp("Fri, 26 May 2006 4:54:30")
+
+    
+    def chineseDate(self, date):
+        import time
+        week = [u'一', u'二', u'三', u'四', u'五', u'六', u'日']
+        x = time.strptime(date, "%a, %d %b %Y %H:%M:%S")
+        return time.strftime("%Y年%m月%d日 %H:%M:%S 星期", x) + week[x[6]].encode('utf8')
+
+    def testChineseDate(self):
+        print self.chineseDate("Fri, 26 May 2006 4:54:30")
 
 """
 from datetime import datetime
@@ -461,6 +471,7 @@ if __name__ == '__main__':
     #test.testAddPrefixToUrl()
     #test.testGetMailAddrFromMemberListCSV()
     #test.testGetTopicContentInTopicListPage()
-    test.testDateToTimestamp()
+    #test.testDateToTimestamp()
+    test.testChineseDate()
     
 
