@@ -3,10 +3,11 @@
 """
 This script extracts entries from a google group to a data structure
 Require 'BeautifulSoup' module
-Released under the GPL. Report bugs to tattoo@bbsers.org
+Released under the GPLv3. Report bugs to tattoo@bbsers.org
+Hosted on https://github.com/tangramor/extract-google-group
 
 (c) Wang Jun Hua, homepage: http://blog.bbsers.org/tattoo
-General Public License: http://www.gnu.org/copyleft/gpl.html
+General Public License: http://www.gnu.org/licenses/gpl-3.0.html
 """
 
 __VERSION__="0.1"
@@ -331,6 +332,7 @@ function tog_quote( idnum ) {
                     threads['email'] = email
                     #date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
                     #threads['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    #use split() instead to support python 2.4
                     date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").split(':')
                     threads['date'] = date[0] + ":" + date[1] + ":" + date[2].split(' ')[0]
                     #print threads['date']
@@ -411,13 +413,15 @@ function tog_quote( idnum ) {
                     reply['email'] = email
                     #date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").rpartition(':')
                     #reply['date'] = date[0] + date[1] + date[2].partition(' ')[0]
+                    #use split() instead to support python 2.4
                     date = tmp[3].find('b').string.replace("&nbsp;", "").replace("\n", "").split(':')
                     reply['date'] = date[0] + ":" + date[1] + ":" + date[2].split(' ')[0]
-                    #print reply['date']
+                    logging.debug(reply['date'])
+
                     reply['subject'] = subject
                     content = u''.join(map(CData, body.contents))
                     content = re.sub(r'a class="qt" href="\?hide_quotes=[^"]+"', 'a class="qt" style="cursor:hand"', content)
-                    #content = content.replace("'", "\\\'")
+                    #content = content.replace("'", "\\\'") #this should be done by user
                     content = togScript + self._addPrefixToUrl(content)
                     reply['content'] = content
     
@@ -438,7 +442,6 @@ function tog_quote( idnum ) {
     #日期格式转换到Unix timestamp
     def dateToTimestamp(self, date):
         import time
-        #return time.mktime(time.strptime(date, "%a, %b %d %Y %I:%M%p"))
         return time.mktime(time.strptime(date, "%a, %d %b %Y %H:%M:%S"))
 
     def testDateToTimestamp(self):
@@ -458,15 +461,6 @@ function tog_quote( idnum ) {
     def testChineseDate(self):
         print self.chineseDate("Fri, 26 May 2006 4:54:30") + u' hello'
 
-"""
-from datetime import datetime
-import time
-
-print datetime.fromtimestamp(1289557692)
-print datetime.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p")
-print int(time.mktime(time.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p")))
-print datetime.fromtimestamp(int(time.mktime(time.strptime("Fri, May 26 2006 4:54am", "%a, %b %d %Y %I:%M%p"))))
-"""
 
 #---------------------------------方法测试---------------------------------
 if __name__ == '__main__':
@@ -480,6 +474,6 @@ if __name__ == '__main__':
     #test.testGetMailAddrFromMemberListCSV()
     #test.testGetTopicContentInTopicListPage()
     #test.testDateToTimestamp()
-    test.testChineseDate()
+    #test.testChineseDate()
     
 

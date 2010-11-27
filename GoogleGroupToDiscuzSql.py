@@ -4,10 +4,11 @@
 This script extracts entries from a google group to a SQL file
 that can be used by a DiscuzX 1.5 forum
 Require 'BeautifulSoup' module
-Released under the GPL. Report bugs to tattoo@bbsers.org
+Released under the GPLv3. Report bugs to tattoo@bbsers.org
+Hosted on https://github.com/tangramor/extract-google-group
 
 (c) Wang Jun Hua, homepage: http://blog.bbsers.org/tattoo
-General Public License: http://www.gnu.org/copyleft/gpl.html
+General Public License: http://www.gnu.org/licenses/gpl-3.0.html
 """
 
 __VERSION__="0.1"
@@ -169,14 +170,6 @@ def Transform(startpage, endpage, threadId, postId):
     CorrectSqlEnd(postTableidFileName)
 
 
-def setLogFormat(startpage, endpage):
-    logging.basicConfig(level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            filename='extract-google-group_' + str(startpage) + '_' + str(endpage) + '.log',
-            filemode='w'
-        )
-
 
 def main():
     parser = OptionParser()
@@ -202,7 +195,7 @@ def main():
         threadId = int(options.threadId)
         postId = int(options.postId)
 
-        stepSize = 2      
+        stepSize = 2    # 2 pages as a batch should be a reasonable size
         startpage = 0
         endpage = startpage + stepSize
         totalpage = extract.getTotalTopicListPageNumber(extract.getTotalTopicNumber())
@@ -290,6 +283,7 @@ def main():
     
     else:
         print usage
+
 
 if __name__=="__main__":
     try:
